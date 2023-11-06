@@ -1,0 +1,33 @@
+---
+# -- (Optional) When using Traefik, use this section
+networks:
+  traefik:
+    external: true
+services:
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
+    command: ["minio", "server", "/data"]
+    ports:
+      - 9000:9000
+      - 9090:9090
+    volumes:
+      - ${HOME}/minio/data:/data
+    environment:
+      - MINIO_ROOT_USER=${USER}
+      - MINIO_ROOT_PASSWORD=${PASSWORD}
+      - MINIO_REGION_NAME=us-east-2
+      - MINIO_CONSOLE_ADDRESS=:9090
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.minio.loadbalancer.server.port=9000"
+      - "traefik.http.routers.minio-http.rule=Host(`s3.my-flora.shop`)"
+      - "traefik.http.routers.minio-http.entrypoints=web"
+      - "traefik.http.routers.minio-https.rule=Host(`s3.my-flora.shop`)"
+      - "traefik.http.routers.minio-https.entrypoints=websecure"
+      - "traefik.http.routers.minio-https.tls=true"
+      - "traefik.http.routers.minio-https.tls.certresolver=production"
+      - "traefik.http.routers.minio-https.tls.domains[0].main=s3.my-flora.shop"
+    networks:
+      - traefik
+    restart: unless-stopped
